@@ -13,41 +13,37 @@ const pool = new Pool({
   connectionString: `postgresql://${PGUSER}:${PGPASSWORD}@${PGHOST}/${PGDATABASE}?sslmode=require`,
 });
 
+const isProd = process.env.NODE_ENV === "production";
+
 export const auth = betterAuth({
   database: pool,
-
-  // baseURL must match your server exactly
-  baseURL: process.env.BETTER_AUTH_URL, 
-
-  // tell BA your frontend is a trusted origin
+  baseURL: process.env.BETTER_AUTH_URL,
   trustedOrigins: [
     "http://localhost:5173",
     "http://localhost:3001",
-    process.env.CLIENT_URL,        // keep this too for production
-  ].filter(Boolean),   
-
+    process.env.CLIENT_URL,
+  ].filter(Boolean),
   advanced: {
     defaultCookieAttributes: {
-      sameSite: "none",
-      secure: true,   // keep false for http localhost; set true in production
+      sameSite: isProd ? "none" : "lax",
+      secure: isProd,
       httpOnly: true,
     },
   },
-
   emailAndPassword: { enabled: true },
-
   socialProviders: {
     google: {
       prompt: "select_account",
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      redirectURI: `${process.env.BETTER_AUTH_URL}/api/auth/callback/google`,
     },
     github: {
       clientId: process.env.GITHUB_CLIENT_ID,
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
+      redirectURI: `${process.env.BETTER_AUTH_URL}/api/auth/callback/github`,
     },
   },
-
   user: {
     additionalFields: {
       role: {
@@ -58,17 +54,15 @@ export const auth = betterAuth({
       },
     },
   },
-
   databaseHooks: {
     user: {
       create: {
         after: async (betterAuthUser) => {
-          console.log("🧑 New user created by Better Auth:", betterAuthUser); //
+          console.log("🧑 New user created by Better Auth:", betterAuthUser);
           const nameParts = (betterAuthUser.name || "").trim().split(" ");
           const firstName = nameParts[0] || "Unknown";
           const lastName = nameParts.slice(1).join(" ") || "Unknown";
           const role = betterAuthUser.role || "user";
-
           await sql`
             INSERT INTO users (auth_id, email, first_name, last_name, role)
             VALUES (${betterAuthUser.id}, ${betterAuthUser.email}, ${firstName}, ${lastName}, ${role})
