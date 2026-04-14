@@ -28,8 +28,8 @@ export const auth = betterAuth({
 
   advanced: {
     defaultCookieAttributes: {
-      sameSite: "lax",
-      secure: false,   // keep false for http localhost; set true in production
+      sameSite: "none",
+      secure: true,   // keep false for http localhost; set true in production
       httpOnly: true,
     },
   },
