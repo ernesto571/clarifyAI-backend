@@ -55,29 +55,32 @@ export const analyzeDoc = async (req, res) => {
     console.log("✅ Saving analysis to db")
 
     // only save if logged in
+    let savedId = null;
+
     const session = await getAuthSession(req.headers);
     if (session) {
-      const userId = session.user.id;
-      const [saved] = await sql`
-        INSERT INTO analysis (
-          auth_id, contract_type, contract_type_short, contract_type_description,
-          ai_summary, key_points, red_flags, sections, meta
-        )
-        VALUES (
-          ${userId}, ${analysis.contract_type}, ${analysis.contract_type_short},
-          ${analysis.contract_type_description}, ${analysis.ai_summary},
-          ${JSON.stringify(analysis.key_points)}, ${JSON.stringify(analysis.red_flags)},
-          ${JSON.stringify(analysis.sections)}, ${JSON.stringify(analysis.meta)}
-        )
-        RETURNING id
-      `;
-      console.log("💾 Analysis saved, id:", saved.id);
+        const userId = session.user.id;
+        const [saved] = await sql`
+            INSERT INTO analysis (
+                auth_id, contract_type, contract_type_short, contract_type_description,
+                ai_summary, key_points, red_flags, sections, meta
+            )
+            VALUES (
+                ${userId}, ${analysis.contract_type}, ${analysis.contract_type_short},
+                ${analysis.contract_type_description}, ${analysis.ai_summary},
+                ${JSON.stringify(analysis.key_points)}, ${JSON.stringify(analysis.red_flags)},
+                ${JSON.stringify(analysis.sections)}, ${JSON.stringify(analysis.meta)}
+            )
+            RETURNING id
+        `;
+        savedId = saved.id;
+        console.log("💾 Analysis saved, id:", savedId);
     } else {
-      console.log("👤 Guest user — analysis not saved");
+        console.log("👤 Guest user — analysis not saved");
     }
 
-
-    return res.status(200).json({ analysis }); // ✅ was missing
+    return res.status(200).json({ analysis, id: savedId });
+    
   } catch (error) {
     console.error("Analyze error:", {
       message: error.message,
