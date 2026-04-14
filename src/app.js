@@ -22,7 +22,7 @@ app.use(helmet({ contentSecurityPolicy: false }));
 app.use(morgan("dev"));
 
 // Better Auth FIRST — before anything else touches /api/auth
-app.all("/api/auth/*splat", toNodeHandler(auth));
+app.all(/^\/api\/auth\/.*/, toNodeHandler(auth));
 
 app.use(express.json());
 
