@@ -17,37 +17,57 @@ const isProd = process.env.NODE_ENV === "production";
 
 export const auth = betterAuth({
   database: pool,
-  baseURL: process.env.BETTER_AUTH_URL,
+  /** * In production, this must be your Netlify URL + the proxy path.
+   * Example: https://clarifyai.netlify.app/api/auth
+   */
+  baseURL: isProd 
+    ? `${process.env.CLIENT_URL}/api/auth` 
+    : process.env.BETTER_AUTH_URL,
+  
   trustedOrigins: [
     "http://localhost:5173",
     "http://localhost:3001",
     process.env.CLIENT_URL,
   ].filter(Boolean),
+
   advanced: {
     useSecureCookies: isProd,
     crossSubDomainCookies: {
       enabled: isProd,
     },
     defaultCookieAttributes: {
-      sameSite: isProd ? "none" : "lax",
+      /**
+       * Since we are proxying, "lax" now works in production 
+       * because the browser treats it as first-party.
+       */
+      sameSite: "lax",
       secure: isProd,
-      extraAttributes: {
-        partitioned: isProd,
-      },
     },
   },
+
   emailAndPassword: { enabled: true },
+
   socialProviders: {
     google: {
       prompt: "select_account",
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      /**
+       * Redirect URI must point to the Netlify Proxy address
+       */
+      redirectURI: isProd 
+        ? `${process.env.CLIENT_URL}/api/auth/callback/google`
+        : `${process.env.BETTER_AUTH_URL}/api/auth/callback/google`,
     },
     github: {
       clientId: process.env.GITHUB_CLIENT_ID,
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
+      redirectURI: isProd 
+        ? `${process.env.CLIENT_URL}/api/auth/callback/github`
+        : `${process.env.BETTER_AUTH_URL}/api/auth/callback/github`,
     },
   },
+
   user: {
     additionalFields: {
       role: {
@@ -58,6 +78,7 @@ export const auth = betterAuth({
       },
     },
   },
+
   databaseHooks: {
     user: {
       create: {
