@@ -24,13 +24,16 @@ export const auth = betterAuth({
     process.env.CLIENT_URL,
   ].filter(Boolean),
   advanced: {
-    useSecureCookies: isProd, // Add this explicitly to force secure cookies
+    useSecureCookies: isProd,
     crossSubDomainCookies: {
-      enabled: isProd, // Tells Better Auth to handle cross-origin cookie logic
+      enabled: isProd,
     },
     defaultCookieAttributes: {
       sameSite: isProd ? "none" : "lax",
       secure: isProd,
+      extraAttributes: {
+        partitioned: isProd,
+      },
     },
   },
   emailAndPassword: { enabled: true },
@@ -39,12 +42,10 @@ export const auth = betterAuth({
       prompt: "select_account",
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      redirectURI: `${process.env.BETTER_AUTH_URL}/api/auth/callback/google`,
     },
     github: {
       clientId: process.env.GITHUB_CLIENT_ID,
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
-      redirectURI: `${process.env.BETTER_AUTH_URL}/api/auth/callback/github`,
     },
   },
   user: {
@@ -61,7 +62,6 @@ export const auth = betterAuth({
     user: {
       create: {
         after: async (betterAuthUser) => {
-          console.log("🧑 New user created by Better Auth:", betterAuthUser);
           const nameParts = (betterAuthUser.name || "").trim().split(" ");
           const firstName = nameParts[0] || "Unknown";
           const lastName = nameParts.slice(1).join(" ") || "Unknown";
