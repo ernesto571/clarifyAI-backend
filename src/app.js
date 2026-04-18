@@ -12,6 +12,7 @@ import { uploadDocument } from "../config/cloudinary.config.js";
 import { fetchHistory } from "../controllers/History.controller.js";
 
 const app = express();
+app.set("trust proxy", 1);
 
 app.use(cors({
   origin: [process.env.CLIENT_URL, "http://localhost:5173"],

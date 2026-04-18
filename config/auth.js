@@ -24,10 +24,13 @@ export const auth = betterAuth({
     process.env.CLIENT_URL,
   ].filter(Boolean),
   advanced: {
+    useSecureCookies: isProd, // Add this explicitly to force secure cookies
+    crossSubDomainCookies: {
+      enabled: isProd, // Tells Better Auth to handle cross-origin cookie logic
+    },
     defaultCookieAttributes: {
       sameSite: isProd ? "none" : "lax",
       secure: isProd,
-      httpOnly: true,
     },
   },
   emailAndPassword: { enabled: true },

@@ -64,3 +64,28 @@ export const updateProfile = async (req, res) => {
         res.status(500).json({ message: "Internal Server Error" });
     }
 };
+
+export const deleteAccount = async (req, res) => {
+    try {
+        const session = await getAuthSession(req.headers);
+        if (!session) return res.status(401).json({ message: "Unauthorized" });
+        const userId = session.user.id;
+
+        // delete all sessions first
+        await sql`DELETE FROM session WHERE "userId" = ${userId}`;
+
+        const [deletedUser] = await sql`
+            DELETE FROM users
+            WHERE auth_id = ${userId}
+            RETURNING auth_id, email, first_name, last_name, role, created_at
+        `;
+
+        // deleting from "user" cascades account, session, verification
+        await sql`DELETE FROM "user" WHERE id = ${userId}`;
+
+        return res.status(200).json({ deletedUser });
+    } catch (error) {
+        console.error("Error in DeleteAccount:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+}
